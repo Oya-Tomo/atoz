@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "atoz-editor",
+    "atoz-renderer",
+    "atoz-gui",
+    "atoz-lsp",
+]
+
+[workspace.dependencies]
+wgpu = "0.17.1"
+tokio = "1.33.0"
+bytemuck = "1.14.0"
+winit = "0.28.7"
+env_logger = "0.10.0"
+image = "0.24.7"
