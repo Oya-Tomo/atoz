@@ -1,4 +1,4 @@
-# atoz ~full scratch text editor~
+# atoz - full scratch text editor
 
 ## atoz-renderer
 
