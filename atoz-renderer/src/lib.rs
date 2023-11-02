@@ -4,6 +4,8 @@ pub mod viewport;
 
 #[cfg(test)]
 mod tests {
+    use std::time::Instant;
+
     use env_logger;
     use wgpu::InstanceDescriptor;
     use winit::event_loop::EventLoopBuilder;
@@ -224,17 +226,21 @@ mod tests {
                 }
                 _ => {}
             },
-            Event::RedrawRequested(window_id) if window_id == window.id() => render(
-                &device,
-                &queue,
-                &surface,
-                &mut circle_pipeline,
-                &mut rect_pipeline,
-                &mut triangle_pipeline,
-                &mut image_pipeline,
-                &draw_layer,
-                &mut viewport.get_bind_group(&device),
-            ),
+            Event::RedrawRequested(window_id) if window_id == window.id() => {
+                let i = Instant::now();
+                render(
+                    &device,
+                    &queue,
+                    &surface,
+                    &mut circle_pipeline,
+                    &mut rect_pipeline,
+                    &mut triangle_pipeline,
+                    &mut image_pipeline,
+                    &draw_layer,
+                    &mut viewport.get_bind_group(&device),
+                );
+                println!("{}", i.elapsed().as_millis());
+            }
             Event::MainEventsCleared => {
                 window.request_redraw();
             }
