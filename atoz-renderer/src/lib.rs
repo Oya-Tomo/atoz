@@ -96,10 +96,12 @@ mod tests {
         };
 
         let mut draw_layer = Layer::default();
-        draw_layer.push_circle(CircleInstance::fill(
+        draw_layer.push_circle(CircleInstance::new(
             [120.0, 120.0],
             70.0,
+            1,
             [1.0, 0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.0, 1.0],
         ));
         draw_layer.push_rect(RectInstance::fill(
             [100.0, 260.0],

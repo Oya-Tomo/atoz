@@ -7,8 +7,8 @@ use atoz_renderer::{
     viewport::Viewport,
 };
 use wgpu::{
-    Color, InstanceDescriptor, RenderPassColorAttachment, RenderPassDescriptor,
-    SurfaceConfiguration, TextureViewDescriptor,
+    InstanceDescriptor, RenderPassColorAttachment, RenderPassDescriptor, SurfaceConfiguration,
+    TextureViewDescriptor,
 };
 use winit::{
     dpi::Size,

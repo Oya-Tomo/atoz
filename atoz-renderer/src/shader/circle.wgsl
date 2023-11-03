@@ -12,12 +12,6 @@ fn convert_pxl_dcm(x: f32, y: f32) -> vec2<f32> {
     return pos;
 }
 
-fn smoothstep_x2(n1: f32, n2: f32, n3: f32, n4: f32, x: f32) -> f32 {
-    return smoothstep(n1, n2, x) * (1.0 - smoothstep(n3, n4, x));
-}
-
-const ANTI_ALIASING_WIDTH = 0.5;
-
 struct VertexInput {
     @location(0) position: vec2<f32>,
     @location(1) center: vec2<f32>,
@@ -41,8 +35,8 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     output.position = vec4<f32>(
         convert_pxl_dcm(
-            input.center.x + input.radius * input.position.x,
-            input.center.y + input.radius * input.position.y,
+            input.center.x + (input.radius + 1.0) * input.position.x,
+            input.center.y + (input.radius + 1.0) * input.position.y,
         ), 0.0, 1.0,
     );
     output.center = input.center;
@@ -58,24 +52,49 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     var color: vec4<f32>;
 
-    var diff_x = input.center.x - input.position.x;
-    var diff_y = input.center.y - input.position.y;
-    var current_radius = sqrt(
-        diff_x * diff_x + diff_y * diff_y
+    var diff_1 = vec2<f32>(
+        input.center.x - (input.position.x + 0.25),
+        input.center.y - (input.position.y + 0.25),
     );
+    var diff_2 = vec2<f32>(
+        input.center.x - (input.position.x + 0.25),
+        input.center.y - (input.position.y + 0.75),
+    );
+    var diff_3 = vec2<f32>(
+        input.center.x - (input.position.x + 0.75),
+        input.center.y - (input.position.y + 0.25),
+    );
+    var diff_4 = vec2<f32>(
+        input.center.x - (input.position.x + 0.75),
+        input.center.y - (input.position.y + 0.75),
+    );
+    var radiuses = vec4<f32>(
+        sqrt(
+            diff_1.x * diff_1.x + diff_1.y * diff_1.y
+        ),
+        sqrt(
+            diff_2.x * diff_2.x + diff_2.y * diff_2.y
+        ),
+        sqrt(
+            diff_3.x * diff_3.x + diff_3.y * diff_3.y
+        ),
+        sqrt(
+            diff_4.x * diff_4.x + diff_4.y * diff_4.y
+        ),
+    );
+    var fill_alpha = (
+        step(radiuses[0], input.radius - input.thickness) +
+        step(radiuses[1], input.radius - input.thickness) +
+        step(radiuses[2], input.radius - input.thickness) +
+        step(radiuses[3], input.radius - input.thickness)
+    ) / 4.0;
 
-    var line_alpha = smoothstep_x2(
-        input.radius - input.thickness - ANTI_ALIASING_WIDTH,
-        input.radius - input.thickness,
-        input.radius - ANTI_ALIASING_WIDTH,
-        input.radius,
-        current_radius,
-    );
-    var fill_alpha = 1.0 - smoothstep(
-        input.radius - input.thickness - ANTI_ALIASING_WIDTH,
-        input.radius - input.thickness,
-        current_radius,
-    );
+    var line_alpha = (
+        step(radiuses[0], input.radius) +
+        step(radiuses[1], input.radius) +
+        step(radiuses[2], input.radius) +
+        step(radiuses[3], input.radius)
+    ) / 4.0 - fill_alpha;
 
     color = line_alpha * input.line_color + fill_alpha * input.fill_color;
 
