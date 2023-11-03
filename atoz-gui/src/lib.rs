@@ -8,7 +8,6 @@ mod tests {
     use std::time::{Duration, Instant};
 
     use winit::{
-        dpi::LogicalSize,
         event::{Event, WindowEvent},
         event_loop::{ControlFlow, EventLoopBuilder},
         platform::wayland::EventLoopBuilderExtWayland,
@@ -16,11 +15,12 @@ mod tests {
 
     use crate::{
         context::Context,
-        layout::{Alignment, Constraint, Padding, Rect},
+        layout::{Alignment, Constraint},
         widget::{
-            container::{Horizontal, Vertical},
-            Widget,
+            container::{Horizontal, HorizontalDecoration, Vertical, VerticalDecoration},
+            Color,
         },
+        window::{Window, WindowDecoration},
     };
 
     #[test]
@@ -29,61 +29,86 @@ mod tests {
         env_logger::init();
 
         let event_loop = EventLoopBuilder::new().with_any_thread(true).build();
-        let mut context = rt.block_on(Context::init(&event_loop, LogicalSize::new(1000, 800)));
-
-        let mut cnt = Horizontal::new(Constraint::percent(100, 1000000000, 0), Alignment::Start)
-            .set_padding(Padding {
-                left: Constraint::pixel(10, 0),
-                right: Constraint::pixel(10, 0),
-                top: Constraint::pixel(20, 0),
-                bottom: Constraint::pixel(20, 0),
-            })
-            .set_children(vec![
-                Box::new(Vertical::new(Constraint::pixel(150, 100), Alignment::Start)),
-                Box::new(Vertical::new(Constraint::pixel(150, 100), Alignment::Start)),
-            ]);
+        let context = rt.block_on(Context::init(&event_loop));
+        let mut window = Window::new(
+            context,
+            Box::new(
+                Vertical::new(Constraint::percent(100, 1000000, 0), Alignment::Start)
+                    .set_decoration(
+                        VerticalDecoration::default()
+                            .set_background_color(Color::new(30, 30, 30, 255))
+                            .set_border_radius(5.0, 5.0, 5.0, 5.0),
+                    )
+                    .set_children(vec![
+                        Box::new(
+                            Horizontal::new(Constraint::pixel(32, 0), Alignment::Start)
+                                .set_decoration(
+                                    HorizontalDecoration::default()
+                                        .set_background_color(Color::new(40, 40, 40, 255)),
+                                ),
+                        ),
+                        Box::new(
+                            Horizontal::new(
+                                Constraint::percent(100, 10000000, 0),
+                                Alignment::Start,
+                            )
+                            .set_decoration(
+                                HorizontalDecoration::default()
+                                    .set_background_color(Color::new(70, 70, 70, 255)),
+                            )
+                            .set_children(vec![Box::new(
+                                Vertical::new(Constraint::percent(30, 400, 200), Alignment::Start)
+                                    .set_decoration(
+                                        VerticalDecoration::default()
+                                            .set_background_color(Color::new(30, 30, 30, 255))
+                                            .set_border_radius(5.0, 5.0, 5.0, 5.0),
+                                    ),
+                            )]),
+                        ),
+                    ]),
+            ),
+            Some(
+                WindowDecoration::default()
+                    .set_size((800, 600))
+                    .set_window_size_limit((10000, 2000), (500, 400)),
+            ),
+        );
 
         let frame_rate = Duration::from_secs_f64(1.0 / 30.0);
         let mut ticker = Instant::now();
-
-        event_loop.run(move |event, _, control_flow| match event {
+        event_loop.run(move |event, _, control_frow| match event {
             Event::WindowEvent {
                 window_id: _,
                 event,
             } => match event {
-                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                WindowEvent::Resized(physical_size) => context.resize(physical_size),
+                WindowEvent::CloseRequested => *control_frow = ControlFlow::Exit,
+                WindowEvent::Resized(size) => {
+                    window.resize(size);
+                }
                 WindowEvent::ScaleFactorChanged {
                     scale_factor: _,
                     new_inner_size,
-                } => context.resize(*new_inner_size),
+                } => {
+                    window.resize(*new_inner_size);
+                }
                 _ => {}
             },
-            Event::RedrawRequested(window_id) => {
-                if window_id == context.get_window_id() {
-                    cnt.layout(Some(Rect::new(
-                        0,
-                        0,
-                        context.get_config().width as _,
-                        context.get_config().height as _,
-                    )));
-                    context.clear_layers();
-                    cnt.render(&mut context);
-                    context.render();
+            Event::RedrawRequested(windos_id) => {
+                if windos_id == window.get_window_id() {
+                    window.render();
                 }
             }
             Event::MainEventsCleared => {
                 if frame_rate <= ticker.elapsed() {
-                    context.request_redraw();
-                    println!("{}", ticker.elapsed().as_nanos());
+                    window.render_request();
                     ticker = Instant::now();
                 } else {
-                    *control_flow = ControlFlow::WaitUntil(
+                    *control_frow = ControlFlow::WaitUntil(
                         Instant::now().checked_sub(ticker.elapsed()).unwrap() + frame_rate,
                     );
                 }
             }
-            _ => {}
+            _ => (),
         });
     }
 }

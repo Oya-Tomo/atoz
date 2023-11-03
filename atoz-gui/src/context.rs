@@ -27,9 +27,8 @@ pub struct Context {
 }
 
 impl Context {
-    pub async fn init<S: Into<Size>>(event_loop: &EventLoop<()>, inner_size: S) -> Self {
+    pub async fn init(event_loop: &EventLoop<()>) -> Self {
         let window = WindowBuilder::new().build(event_loop).unwrap();
-        window.set_inner_size(inner_size);
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(InstanceDescriptor {
@@ -97,6 +96,14 @@ impl Context {
         }
     }
 
+    pub fn set_min_size<S: Into<Size>>(&mut self, size: S) {
+        self.window.set_min_inner_size(Some(size));
+    }
+
+    pub fn set_max_size<S: Into<Size>>(&mut self, size: S) {
+        self.window.set_max_inner_size(Some(size));
+    }
+
     pub fn get_config(&self) -> SurfaceConfiguration {
         return self.config.clone();
     }
@@ -137,7 +144,8 @@ impl Context {
         let viewport_group = Viewport::new(self.config.width as _, self.config.height as _)
             .get_bind_group(&self.device);
 
-        for layer in &self.layers {
+        for index in 0..self.layers.len() {
+            let layer = &self.layers[index];
             let rect_buffer = layer.get_rect_buffer(&self.device);
             let rect_count = layer.rects.len();
 
@@ -156,7 +164,11 @@ impl Context {
                         view: &view,
                         resolve_target: None,
                         ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
+                            load: if index > 0 {
+                                wgpu::LoadOp::Load
+                            } else {
+                                wgpu::LoadOp::Clear(wgpu::Color::BLACK)
+                            },
                             store: true,
                         },
                     })],

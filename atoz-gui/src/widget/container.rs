@@ -1,12 +1,13 @@
 use atoz_renderer::{layer::Layer, pipeline::rect::RectInstance};
 
-use super::{Alignment, Constraint, Rect, Widget};
+use super::{Alignment, Color, Constraint, Rect, Widget};
 use crate::{context::Context, layout::Padding};
 
 pub struct Horizontal {
     constraint: Constraint,
     alignment: Alignment,
     padding: Padding,
+    decoration: HorizontalDecoration,
     rect: Option<Rect>,
     children: Vec<Box<dyn Widget>>,
 }
@@ -17,6 +18,7 @@ impl Horizontal {
             constraint,
             alignment,
             padding: Padding::default(),
+            decoration: HorizontalDecoration::default(),
             rect: Some(Rect::default()),
             children: vec![],
         };
@@ -29,6 +31,11 @@ impl Horizontal {
 
     pub fn set_children(mut self, widgets: Vec<Box<dyn Widget>>) -> Self {
         self.children = widgets;
+        return self;
+    }
+
+    pub fn set_decoration(mut self, decoration: HorizontalDecoration) -> Self {
+        self.decoration = decoration;
         return self;
     }
 }
@@ -115,8 +122,8 @@ impl Widget for Horizontal {
         layer.push_rect(RectInstance::fill(
             [rect.left() as _, rect.top() as _],
             [rect.width() as _, rect.height() as _],
-            [5.0, 5.0, 5.0, 5.0],
-            [0.5, 0.6, 0.7, 1.0],
+            self.decoration.border_radius,
+            self.decoration.background_color,
         ));
         context.push_layers(layer);
 
@@ -126,10 +133,40 @@ impl Widget for Horizontal {
     }
 }
 
+pub struct HorizontalDecoration {
+    border_radius: [f32; 4],
+    background_color: [f32; 4],
+}
+
+impl HorizontalDecoration {
+    pub fn set_border_radius(mut self, lt: f32, lb: f32, rb: f32, rt: f32) -> Self {
+        self.border_radius[0] = lt;
+        self.border_radius[1] = lb;
+        self.border_radius[2] = rb;
+        self.border_radius[3] = rt;
+        return self;
+    }
+
+    pub fn set_background_color(mut self, color: Color) -> Self {
+        self.background_color = color.to_float();
+        return self;
+    }
+}
+
+impl Default for HorizontalDecoration {
+    fn default() -> Self {
+        Self {
+            border_radius: [0.0, 0.0, 0.0, 0.0],
+            background_color: [0.0, 0.0, 0.0, 0.0],
+        }
+    }
+}
+
 pub struct Vertical {
     constraint: Constraint,
     alignment: Alignment,
     padding: Padding,
+    decoration: VerticalDecoration,
     rect: Option<Rect>,
     children: Vec<Box<dyn Widget>>,
 }
@@ -140,6 +177,7 @@ impl Vertical {
             constraint,
             alignment,
             padding: Padding::default(),
+            decoration: VerticalDecoration::default(),
             rect: Some(Rect::default()),
             children: vec![],
         };
@@ -152,6 +190,11 @@ impl Vertical {
 
     pub fn set_children(mut self, widgets: Vec<Box<dyn Widget>>) -> Self {
         self.children = widgets;
+        return self;
+    }
+
+    pub fn set_decoration(mut self, decoration: VerticalDecoration) -> Self {
+        self.decoration = decoration;
         return self;
     }
 }
@@ -238,14 +281,45 @@ impl Widget for Vertical {
         layer.push_rect(RectInstance::fill(
             [rect.left() as _, rect.top() as _],
             [rect.width() as _, rect.height() as _],
-            [5.0, 5.0, 5.0, 5.0],
-            [0.3, 0.9, 0.2, 1.0],
+            self.decoration.border_radius,
+            self.decoration.background_color,
         ));
         context.push_layers(layer);
+
+        self.children
+            .iter()
+            .for_each(|widget| widget.render(context));
     }
 }
 
-pub struct VerticalDecoration {}
+pub struct VerticalDecoration {
+    border_radius: [f32; 4],
+    background_color: [f32; 4],
+}
+
+impl VerticalDecoration {
+    pub fn set_border_radius(mut self, lt: f32, lb: f32, rb: f32, rt: f32) -> Self {
+        self.border_radius[0] = lt;
+        self.border_radius[1] = lb;
+        self.border_radius[2] = rb;
+        self.border_radius[3] = rt;
+        return self;
+    }
+
+    pub fn set_background_color(mut self, color: Color) -> Self {
+        self.background_color = color.to_float();
+        return self;
+    }
+}
+
+impl Default for VerticalDecoration {
+    fn default() -> Self {
+        Self {
+            border_radius: [0.0, 0.0, 0.0, 0.0],
+            background_color: [0.0, 0.0, 0.0, 0.0],
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
