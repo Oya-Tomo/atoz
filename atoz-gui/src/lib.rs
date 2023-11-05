@@ -44,26 +44,87 @@ mod tests {
                             Horizontal::new(Constraint::pixel(32, 0), Alignment::Start)
                                 .set_decoration(
                                     HorizontalDecoration::default()
-                                        .set_background_color(Color::new(40, 40, 40, 255)),
+                                        .set_background_color(Color::new(7, 7, 7, 255)),
                                 ),
                         ),
                         Box::new(
-                            Horizontal::new(
-                                Constraint::percent(100, 10000000, 0),
-                                Alignment::Start,
-                            )
-                            .set_decoration(
-                                HorizontalDecoration::default()
-                                    .set_background_color(Color::new(70, 70, 70, 255)),
-                            )
-                            .set_children(vec![Box::new(
-                                Vertical::new(Constraint::percent(30, 400, 200), Alignment::Start)
+                            Horizontal::new(Constraint::percent(100, 1000000, 0), Alignment::Start)
+                                .set_decoration(
+                                    HorizontalDecoration::default()
+                                        .set_background_color(Color::new(10, 10, 10, 255)),
+                                )
+                                .set_children(vec![Box::new(
+                                    Vertical::new(
+                                        Constraint::percent(30, 400, 200),
+                                        Alignment::Start,
+                                    )
                                     .set_decoration(
                                         VerticalDecoration::default()
-                                            .set_background_color(Color::new(30, 30, 30, 255))
-                                            .set_border_radius(5.0, 5.0, 5.0, 5.0),
-                                    ),
-                            )]),
+                                            .set_background_color(Color::new(5, 5, 5, 255)),
+                                    )
+                                    .set_children(vec![
+                                        Box::new(
+                                            Horizontal::new(
+                                                Constraint::pixel(20, 10),
+                                                Alignment::Start,
+                                            )
+                                            .set_decoration(
+                                                HorizontalDecoration::default()
+                                                    .set_background_color(Color::new(4, 4, 4, 255)),
+                                            ),
+                                        ),
+                                        Box::new(
+                                            Horizontal::new(
+                                                Constraint::pixel(20, 10),
+                                                Alignment::Start,
+                                            )
+                                            .set_decoration(
+                                                HorizontalDecoration::default()
+                                                    .set_background_color(Color::new(6, 6, 6, 255)),
+                                            ),
+                                        ),
+                                        Box::new(
+                                            Horizontal::new(
+                                                Constraint::pixel(20, 10),
+                                                Alignment::Start,
+                                            )
+                                            .set_decoration(
+                                                HorizontalDecoration::default()
+                                                    .set_background_color(Color::new(4, 4, 4, 255)),
+                                            ),
+                                        ),
+                                        Box::new(
+                                            Horizontal::new(
+                                                Constraint::pixel(20, 10),
+                                                Alignment::Start,
+                                            )
+                                            .set_decoration(
+                                                HorizontalDecoration::default()
+                                                    .set_background_color(Color::new(6, 6, 6, 255)),
+                                            ),
+                                        ),
+                                        Box::new(
+                                            Horizontal::new(
+                                                Constraint::pixel(20, 10),
+                                                Alignment::Start,
+                                            )
+                                            .set_decoration(
+                                                HorizontalDecoration::default()
+                                                    .set_background_color(Color::new(4, 4, 4, 255)),
+                                            ),
+                                        ),
+                                        Box::new(
+                                            Horizontal::new(
+                                                Constraint::pixel(20, 10),
+                                                Alignment::Start,
+                                            )
+                                            .set_decoration(
+                                                HorizontalDecoration::default()
+                                                    .set_background_color(Color::new(6, 6, 6, 255)),
+                                            ),
+                                        ),
+                                    ]),
+                                )]),
                         ),
                     ]),
             ),
@@ -95,7 +156,9 @@ mod tests {
             },
             Event::RedrawRequested(windos_id) => {
                 if windos_id == window.get_window_id() {
+                    let i = Instant::now();
                     window.render();
+                    println!("widget full render : {}ms", i.elapsed().as_millis());
                 }
             }
             Event::MainEventsCleared => {

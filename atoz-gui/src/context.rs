@@ -1,5 +1,5 @@
 use atoz_renderer::{
-    layer::Layer,
+    layer::{Layer, LayerBuffer},
     pipeline::{
         circle::CirclePipeline, image::ImagePipeline, rect::RectPipeline,
         triangle::TrianglePipeline,
@@ -24,6 +24,10 @@ pub struct Context {
     surface: wgpu::Surface,
     config: wgpu::SurfaceConfiguration,
     layers: Vec<Layer>,
+    rect_pipeline: RectPipeline,
+    triangle_pipeline: TrianglePipeline,
+    circle_pipeline: CirclePipeline,
+    image_pipeline: ImagePipeline,
 }
 
 impl Context {
@@ -78,6 +82,11 @@ impl Context {
         };
         surface.configure(&device, &config);
 
+        let rect_pipeline = RectPipeline::new(&device, config.format);
+        let triangle_pipeline = TrianglePipeline::new(&device, config.format);
+        let circle_pipeline = CirclePipeline::new(&device, config.format);
+        let image_pipeline = ImagePipeline::new(&device, config.format);
+
         return Self {
             window,
             device,
@@ -85,6 +94,10 @@ impl Context {
             surface,
             config,
             layers: vec![],
+            rect_pipeline,
+            triangle_pipeline,
+            circle_pipeline,
+            image_pipeline,
         };
     }
 
@@ -136,77 +149,55 @@ impl Context {
             .texture
             .create_view(&TextureViewDescriptor::default());
 
-        let rect_pipeline = RectPipeline::new(&self.device, self.config.format);
-        let triangle_pipeline = TrianglePipeline::new(&self.device, self.config.format);
-        let circle_pipeline = CirclePipeline::new(&self.device, self.config.format);
-        let image_pipeline = ImagePipeline::new(&self.device, self.config.format);
-
         let viewport_group = Viewport::new(self.config.width as _, self.config.height as _)
             .get_bind_group(&self.device);
 
-        for index in 0..self.layers.len() {
-            let layer = &self.layers[index];
-            let rect_buffer = layer.get_rect_buffer(&self.device);
-            let rect_count = layer.rects.len();
+        let layer_buffers = self
+            .layers
+            .iter()
+            .map(|layer| layer.get_all_buffers(&self.device))
+            .collect::<Vec<LayerBuffer>>();
 
-            let triangle_buffer = layer.get_triangle_buffer(&self.device);
-            let triangle_count = layer.triangles.len();
+        {
+            let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
+                label: Some("context.render.render_pass"),
+                color_attachments: &[Some(RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: true,
+                    },
+                })],
+                depth_stencil_attachment: None,
+            });
 
-            let circle_buffer = layer.get_circle_buffer(&self.device);
-            let circle_count = layer.circles.len();
+            layer_buffers.iter().for_each(|buffer| {
+                self.rect_pipeline.render(
+                    &mut render_pass,
+                    &buffer.rect_buffer,
+                    buffer.rect_count as _,
+                    &viewport_group,
+                );
 
-            let image_buffer = layer.get_image_buffers(&self.device);
+                self.triangle_pipeline.render(
+                    &mut render_pass,
+                    &buffer.triangle_buffer,
+                    buffer.triangle_count as _,
+                    &viewport_group,
+                );
 
-            {
-                let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
-                    label: Some("context.render.render_pass"),
-                    color_attachments: &[Some(RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: if index > 0 {
-                                wgpu::LoadOp::Load
-                            } else {
-                                wgpu::LoadOp::Clear(wgpu::Color::BLACK)
-                            },
-                            store: true,
-                        },
-                    })],
-                    depth_stencil_attachment: None,
-                });
+                self.circle_pipeline.render(
+                    &mut render_pass,
+                    &buffer.circle_buffer,
+                    buffer.circle_count as _,
+                    &viewport_group,
+                );
 
-                if rect_count > 0 {
-                    rect_pipeline.render(
-                        &mut render_pass,
-                        &rect_buffer,
-                        rect_count as _,
-                        &viewport_group,
-                    );
-                }
-
-                if triangle_count > 0 {
-                    triangle_pipeline.render(
-                        &mut render_pass,
-                        &triangle_buffer,
-                        triangle_count as _,
-                        &viewport_group,
-                    );
-                }
-
-                if circle_count > 0 {
-                    circle_pipeline.render(
-                        &mut render_pass,
-                        &circle_buffer,
-                        circle_count as _,
-                        &viewport_group,
-                    );
-                }
-
-                image_buffer
-                    .iter()
-                    .for_each(|(texture, instance_buffer, instance_count)| {
+                buffer.image_buffers.iter().for_each(
+                    |(texture, instance_buffer, instance_count)| {
                         if instance_count > &0 {
-                            image_pipeline.render(
+                            self.image_pipeline.render(
                                 &mut render_pass,
                                 instance_buffer,
                                 instance_count.clone(),
@@ -214,8 +205,9 @@ impl Context {
                                 &viewport_group,
                             );
                         }
-                    });
-            }
+                    },
+                );
+            });
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

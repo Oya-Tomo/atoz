@@ -45,9 +45,12 @@ impl Window {
         let height = self.context.get_config().height;
 
         self.context.clear_layers();
+
         self.child
             .layout(Some(Rect::new(0, 0, width as _, height as _)));
+
         self.child.render(&mut self.context);
+
         self.context.render();
     }
 }
