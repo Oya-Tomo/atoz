@@ -7,8 +7,8 @@ use atoz_renderer::{
     viewport::Viewport,
 };
 use wgpu::{
-    InstanceDescriptor, RenderPassColorAttachment, RenderPassDescriptor, SurfaceConfiguration,
-    TextureViewDescriptor,
+    InstanceDescriptor, InstanceFlags, RenderPassColorAttachment, RenderPassDescriptor,
+    SurfaceConfiguration, TextureViewDescriptor,
 };
 use winit::{
     dpi::Size,
@@ -38,6 +38,8 @@ impl Context {
         let instance = wgpu::Instance::new(InstanceDescriptor {
             backends: wgpu::Backends::all(),
             dx12_shader_compiler: wgpu::Dx12Compiler::default(),
+            flags: InstanceFlags::all(),
+            gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
         });
         let surface = unsafe { instance.create_surface(&window) }.unwrap();
 
@@ -166,10 +168,12 @@ impl Context {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: true,
+                        store: wgpu::StoreOp::Store,
                     },
                 })],
                 depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
             });
 
             layer_buffers.iter().for_each(|buffer| {

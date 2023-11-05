@@ -7,7 +7,8 @@ mod tests {
     use std::time::Instant;
 
     use env_logger;
-    use wgpu::InstanceDescriptor;
+    use wgpu::{InstanceDescriptor, InstanceFlags};
+    use winit::error::EventLoopError;
     use winit::event_loop::EventLoopBuilder;
     use winit::{
         dpi::PhysicalSize,
@@ -29,12 +30,15 @@ mod tests {
     };
 
     #[test]
-    fn test_pipeline() {
+    fn test_pipeline() -> Result<(), EventLoopError> {
         let rt = tokio::runtime::Runtime::new().unwrap();
         env_logger::init();
-        let event_loop = EventLoopBuilder::new().with_any_thread(true).build();
+        let event_loop = EventLoopBuilder::new()
+            .with_any_thread(true)
+            .build()
+            .unwrap();
         let window = WindowBuilder::new().build(&event_loop).unwrap();
-        let _ = window.set_inner_size(PhysicalSize::new(800, 600));
+        let _ = window.request_inner_size(PhysicalSize::new(800, 600));
 
         let size = window.inner_size();
         let mut viewport = Viewport::new(size.width as f32, size.height as f32);
@@ -42,6 +46,8 @@ mod tests {
         let instance = wgpu::Instance::new(InstanceDescriptor {
             backends: wgpu::Backends::all(),
             dx12_shader_compiler: wgpu::Dx12Compiler::default(),
+            flags: InstanceFlags::all(),
+            gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
         });
         let surface = unsafe { instance.create_surface(&window) }.unwrap();
 
@@ -165,10 +171,12 @@ mod tests {
                                 b: 0.0,
                                 a: 0.0,
                             }),
-                            store: true,
+                            store: wgpu::StoreOp::Store,
                         },
                     })],
                     depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
                 });
 
                 rect_pipeline.render(
@@ -209,41 +217,37 @@ mod tests {
             output.present();
         };
 
-        event_loop.run(move |event, _, control_flow| match event {
+        return event_loop.run(move |event, elwt| match event {
             Event::WindowEvent {
                 ref event,
                 window_id,
             } if window_id == window.id() => match event {
-                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                WindowEvent::CloseRequested => {
+                    elwt.exit();
+                }
                 WindowEvent::Resized(physical_size) => {
                     resize(&device, &surface, &mut config, *physical_size);
                     viewport =
                         Viewport::new(physical_size.width as f32, physical_size.height as f32);
                 }
-                WindowEvent::ScaleFactorChanged {
-                    scale_factor: _,
-                    new_inner_size,
-                } => {
-                    resize(&device, &surface, &mut config, **new_inner_size);
+                WindowEvent::RedrawRequested => {
+                    let i = Instant::now();
+                    render(
+                        &device,
+                        &queue,
+                        &surface,
+                        &mut circle_pipeline,
+                        &mut rect_pipeline,
+                        &mut triangle_pipeline,
+                        &mut image_pipeline,
+                        &draw_layer,
+                        &mut viewport.get_bind_group(&device),
+                    );
+                    println!("{}", i.elapsed().as_millis());
                 }
                 _ => {}
             },
-            Event::RedrawRequested(window_id) if window_id == window.id() => {
-                let i = Instant::now();
-                render(
-                    &device,
-                    &queue,
-                    &surface,
-                    &mut circle_pipeline,
-                    &mut rect_pipeline,
-                    &mut triangle_pipeline,
-                    &mut image_pipeline,
-                    &draw_layer,
-                    &mut viewport.get_bind_group(&device),
-                );
-                println!("{}", i.elapsed().as_millis());
-            }
-            Event::MainEventsCleared => {
+            Event::AboutToWait => {
                 window.request_redraw();
             }
             _ => {}

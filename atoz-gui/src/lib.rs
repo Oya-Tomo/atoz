@@ -5,9 +5,13 @@ pub mod window;
 
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, Instant};
+    use std::{
+        process::exit,
+        time::{Duration, Instant},
+    };
 
     use winit::{
+        error::EventLoopError,
         event::{Event, WindowEvent},
         event_loop::{ControlFlow, EventLoopBuilder},
         platform::wayland::EventLoopBuilderExtWayland,
@@ -24,11 +28,14 @@ mod tests {
     };
 
     #[test]
-    fn container_layout_test() {
+    fn container_layout_test() -> Result<(), EventLoopError> {
         let rt = tokio::runtime::Runtime::new().unwrap();
         env_logger::init();
 
-        let event_loop = EventLoopBuilder::new().with_any_thread(true).build();
+        let event_loop = EventLoopBuilder::new()
+            .with_any_thread(true)
+            .build()
+            .unwrap();
         let context = rt.block_on(Context::init(&event_loop));
         let mut window = Window::new(
             context,
@@ -53,78 +60,113 @@ mod tests {
                                     HorizontalDecoration::default()
                                         .set_background_color(Color::new(10, 10, 10, 255)),
                                 )
-                                .set_children(vec![Box::new(
-                                    Vertical::new(
-                                        Constraint::percent(30, 400, 200),
-                                        Alignment::Start,
-                                    )
-                                    .set_decoration(
-                                        VerticalDecoration::default()
-                                            .set_background_color(Color::new(5, 5, 5, 255)),
-                                    )
-                                    .set_children(vec![
-                                        Box::new(
-                                            Horizontal::new(
-                                                Constraint::pixel(20, 10),
-                                                Alignment::Start,
-                                            )
-                                            .set_decoration(
-                                                HorizontalDecoration::default()
-                                                    .set_background_color(Color::new(4, 4, 4, 255)),
-                                            ),
+                                .set_children(vec![
+                                    Box::new(
+                                        Vertical::new(
+                                            Constraint::percent(30, 400, 200),
+                                            Alignment::Start,
+                                        )
+                                        .set_decoration(
+                                            VerticalDecoration::default()
+                                                .set_background_color(Color::new(5, 5, 5, 255)),
+                                        )
+                                        .set_children(
+                                            vec![
+                                                Box::new(
+                                                    Horizontal::new(
+                                                        Constraint::pixel(20, 10),
+                                                        Alignment::Start,
+                                                    )
+                                                    .set_decoration(
+                                                        HorizontalDecoration::default()
+                                                            .set_background_color(Color::new(
+                                                                4, 4, 4, 255,
+                                                            )),
+                                                    ),
+                                                ),
+                                                Box::new(
+                                                    Horizontal::new(
+                                                        Constraint::pixel(20, 10),
+                                                        Alignment::Start,
+                                                    )
+                                                    .set_decoration(
+                                                        HorizontalDecoration::default()
+                                                            .set_background_color(Color::new(
+                                                                6, 6, 6, 255,
+                                                            )),
+                                                    ),
+                                                ),
+                                                Box::new(
+                                                    Horizontal::new(
+                                                        Constraint::pixel(20, 10),
+                                                        Alignment::Start,
+                                                    )
+                                                    .set_decoration(
+                                                        HorizontalDecoration::default()
+                                                            .set_background_color(Color::new(
+                                                                4, 4, 4, 255,
+                                                            )),
+                                                    ),
+                                                ),
+                                                Box::new(
+                                                    Horizontal::new(
+                                                        Constraint::pixel(20, 10),
+                                                        Alignment::Start,
+                                                    )
+                                                    .set_decoration(
+                                                        HorizontalDecoration::default()
+                                                            .set_background_color(Color::new(
+                                                                6, 6, 6, 255,
+                                                            )),
+                                                    ),
+                                                ),
+                                                Box::new(
+                                                    Horizontal::new(
+                                                        Constraint::pixel(20, 10),
+                                                        Alignment::Start,
+                                                    )
+                                                    .set_decoration(
+                                                        HorizontalDecoration::default()
+                                                            .set_background_color(Color::new(
+                                                                4, 4, 4, 255,
+                                                            )),
+                                                    ),
+                                                ),
+                                                Box::new(
+                                                    Horizontal::new(
+                                                        Constraint::pixel(20, 10),
+                                                        Alignment::Start,
+                                                    )
+                                                    .set_decoration(
+                                                        HorizontalDecoration::default()
+                                                            .set_background_color(Color::new(
+                                                                6, 6, 6, 255,
+                                                            )),
+                                                    ),
+                                                ),
+                                            ],
                                         ),
-                                        Box::new(
-                                            Horizontal::new(
-                                                Constraint::pixel(20, 10),
-                                                Alignment::Start,
-                                            )
-                                            .set_decoration(
-                                                HorizontalDecoration::default()
-                                                    .set_background_color(Color::new(6, 6, 6, 255)),
-                                            ),
+                                    ),
+                                    Box::new(
+                                        Vertical::new(
+                                            Constraint::percent(70, 400, 100),
+                                            Alignment::Start,
+                                        )
+                                        .set_decoration(
+                                            VerticalDecoration::default()
+                                                .set_border_radius(10.0, 20.0, 30.0, 40.0)
+                                                .set_background_color(Color::new(10, 20, 40, 50)),
                                         ),
-                                        Box::new(
-                                            Horizontal::new(
-                                                Constraint::pixel(20, 10),
-                                                Alignment::Start,
-                                            )
+                                    ),
+                                    Box::new(
+                                        Vertical::new(Constraint::pixel(200, 100), Alignment::End)
                                             .set_decoration(
-                                                HorizontalDecoration::default()
-                                                    .set_background_color(Color::new(4, 4, 4, 255)),
+                                                VerticalDecoration::default().set_background_color(
+                                                    Color::new(40, 10, 20, 80),
+                                                ),
                                             ),
-                                        ),
-                                        Box::new(
-                                            Horizontal::new(
-                                                Constraint::pixel(20, 10),
-                                                Alignment::Start,
-                                            )
-                                            .set_decoration(
-                                                HorizontalDecoration::default()
-                                                    .set_background_color(Color::new(6, 6, 6, 255)),
-                                            ),
-                                        ),
-                                        Box::new(
-                                            Horizontal::new(
-                                                Constraint::pixel(20, 10),
-                                                Alignment::Start,
-                                            )
-                                            .set_decoration(
-                                                HorizontalDecoration::default()
-                                                    .set_background_color(Color::new(4, 4, 4, 255)),
-                                            ),
-                                        ),
-                                        Box::new(
-                                            Horizontal::new(
-                                                Constraint::pixel(20, 10),
-                                                Alignment::Start,
-                                            )
-                                            .set_decoration(
-                                                HorizontalDecoration::default()
-                                                    .set_background_color(Color::new(6, 6, 6, 255)),
-                                            ),
-                                        ),
-                                    ]),
-                                )]),
+                                    ),
+                                ]),
                         ),
                     ]),
             ),
@@ -135,40 +177,35 @@ mod tests {
             ),
         );
 
-        let frame_rate = Duration::from_secs_f64(1.0 / 30.0);
+        let frame_rate = Duration::from_secs_f64(1.0 / 60.0);
         let mut ticker = Instant::now();
-        event_loop.run(move |event, _, control_frow| match event {
-            Event::WindowEvent {
-                window_id: _,
-                event,
-            } => match event {
-                WindowEvent::CloseRequested => *control_frow = ControlFlow::Exit,
-                WindowEvent::Resized(size) => {
-                    window.resize(size);
-                }
-                WindowEvent::ScaleFactorChanged {
-                    scale_factor: _,
-                    new_inner_size,
-                } => {
-                    window.resize(*new_inner_size);
-                }
-                _ => {}
-            },
-            Event::RedrawRequested(windos_id) => {
-                if windos_id == window.get_window_id() {
-                    let i = Instant::now();
-                    window.render();
-                    println!("widget full render : {}ms", i.elapsed().as_millis());
+
+        return event_loop.run(move |event, elwt| match event {
+            Event::WindowEvent { window_id, event } if window_id == window.get_window_id() => {
+                match event {
+                    WindowEvent::CloseRequested => {
+                        elwt.exit();
+                    }
+                    WindowEvent::Resized(physical_size) => {
+                        window.resize(physical_size);
+                    }
+                    WindowEvent::RedrawRequested => {
+                        let i = Instant::now();
+                        window.render();
+                        println!("{}", i.elapsed().as_millis());
+                    }
+                    _ => {}
                 }
             }
-            Event::MainEventsCleared => {
+            Event::AboutToWait => {
                 if frame_rate <= ticker.elapsed() {
                     window.render_request();
+                    println!("ticker : {}", ticker.elapsed().as_micros());
                     ticker = Instant::now();
                 } else {
-                    *control_frow = ControlFlow::WaitUntil(
+                    elwt.set_control_flow(ControlFlow::WaitUntil(
                         Instant::now().checked_sub(ticker.elapsed()).unwrap() + frame_rate,
-                    );
+                    ));
                 }
             }
             _ => (),

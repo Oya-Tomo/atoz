@@ -141,6 +141,8 @@ impl Constraint {
 
                 if size <= space {
                     return size;
+                } else if self.min <= space {
+                    return space;
                 } else {
                     return 0;
                 }
